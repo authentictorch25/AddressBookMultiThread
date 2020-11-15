@@ -54,7 +54,7 @@ namespace AddressBookThread
             finally
             {
                 if (connection.State.Equals("Open"))
-                    connection.Close();
+                connection.Close();
             }
         }
     }
