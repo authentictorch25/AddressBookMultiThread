@@ -87,6 +87,60 @@ namespace AddressBookThread
                     connection.Close();
             }
         }
+        public void GetContactsAddedInPeriod(string startdate, string endDate)
+        {
+            string query = $@"select c.*,ca.city,ca.state,ca.zip,t.ContactType,am.AddressBookName from contact c,contact_address ca,type t,addressbookmap am,contact_type ct where c.dateAdded between cast('{startdate}' as date)  and cast('{endDate}' as date) and c.Firstname=ca.FirstName and c.LastName=ca.lastName and c.Firstname=ct.FirstName and c.LastName=ct.lastName and t.TypeCode=ct.TypeCode and c.Firstname=am.FirstName and c.LastName=am.lastName";
+            GetData(query);
+        }
+        public void GetData(string query)
+        {
+            //Creates a new connection for every method to avoid "ConnectionString property not initialized" exception
+            DBConnection dbc = new DBConnection();
+            connection = dbc.GetConnection();
+            AddressBookModel model = new AddressBookModel();
+            try
+            {
+                using (connection)
+                {
+                    SqlCommand command = new SqlCommand(query, connection);
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            model.FirstName = reader.GetString(0);
+                            model.LastName = reader.GetString(1);
+                            model.Address = reader.GetString(2);
+                            model.PhoneNumber = reader.GetInt64(3);
+                            model.Email = reader.GetString(4);
+                            model.DateAdded = reader.GetDateTime(5);
+                            model.City = reader.GetString(6);
+                            model.State = reader.GetString(7);
+                            model.Zip = reader.GetInt32(8);
+                            model.ContactType = reader.GetString(9);
+                            model.AddressBookName = reader.GetString(10);
+                            Console.WriteLine($"First Name: {model.FirstName}\nLast Name: {model.LastName}\nAddress: {model.Address}\nCity: {model.City}\nState: {model.State}\nZip: {model.Zip}\nPhone Number: {model.PhoneNumber}\nDateAdded:{model.DateAdded}\nEmail: {model.Email}\nContact Type: {model.ContactType}\nAddress Book Name : {model.AddressBookName}");
+                            Console.WriteLine("\n");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No data found");
+                    }
+                    reader.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            finally
+            {
+                if (connection.State.Equals("Open"))
+                    connection.Close();
+            }
+        }
     }
 }
 
