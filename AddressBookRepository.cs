@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Text;
+using System.Threading;
 
 namespace AddressBookThread
 {
@@ -54,7 +56,7 @@ namespace AddressBookThread
             finally
             {
                 if (connection.State.Equals("Open"))
-                connection.Close();
+                    connection.Close();
             }
         }
         public bool UpdateExistingContactUsingName(string firstName, string lastName, string column, string newValue)
@@ -189,6 +191,70 @@ namespace AddressBookThread
                 if (connection.State.Equals("Open"))
                     connection.Close();
             }
+        }
+        public bool AddContactDetailsIntoDataBase(AddressBookModel model)
+        {
+            DBConnection dbc = new DBConnection();
+            connection = dbc.GetConnection();
+            try
+            {
+                using (connection)
+                {
+                    SqlCommand command = new SqlCommand();
+                    command.CommandText = "dbo.spAddContactIntoMultipleTables";
+                    command.Connection = connection;
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@firstname", model.FirstName);
+                    command.Parameters.AddWithValue("@lastname", model.LastName);
+                    command.Parameters.AddWithValue("@address", model.Address);
+                    command.Parameters.AddWithValue("@city", model.City);
+                    command.Parameters.AddWithValue("@state", model.State);
+                    command.Parameters.AddWithValue("@zip", model.Zip);
+                    command.Parameters.AddWithValue("@phonenumber", model.PhoneNumber);
+                    command.Parameters.AddWithValue("@email", model.Email);
+                    command.Parameters.AddWithValue("@dateadded", model.DateAdded);
+                    command.Parameters.AddWithValue("@contacttype", model.ContactType);
+                    command.Parameters.AddWithValue("@typecode", model.TypeCode);
+                    command.Parameters.AddWithValue("@addressbookname", model.AddressBookName);
+                    connection.Open();
+                    int result = command.ExecuteNonQuery();
+                    if (result != 0)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+            finally
+            {
+                if (connection.State.Equals("Open"))
+                    connection.Close();
+            }
+        }
+        public void AddMultipleContactsUsingThread(List<AddressBookModel> contactList)
+        {
+            Stopwatch s = new Stopwatch();
+            s.Start();
+            foreach (var contact in contactList)
+            {
+                // Using thread to add each contact present in the list
+                Thread th = new Thread(() =>
+                {
+                    Console.WriteLine("Thread id: " + Thread.CurrentThread.ManagedThreadId);
+                    Console.WriteLine($"Contact being added:{contact.FirstName} {contact.LastName}");
+                    AddContactDetailsIntoDataBase(contact);
+                    Console.WriteLine(AddContactDetailsIntoDataBase(contact) ? $"Contact added:{contact.FirstName} {contact.LastName}" : "Addition Failed");
+                });
+                th.Start();
+                th.Join();
+            }
+            s.Stop();
+            Console.WriteLine("Elapsed time to add contacts:" + s.ElapsedMilliseconds);
         }
     }
 }
