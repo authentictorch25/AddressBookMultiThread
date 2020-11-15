@@ -57,6 +57,36 @@ namespace AddressBookThread
                 connection.Close();
             }
         }
+        public bool UpdateExistingContactUsingName(string firstName, string lastName, string column, string newValue)
+        {
+            DBConnection dbc = new DBConnection();
+            connection = dbc.GetConnection();
+            try
+            {
+                using (connection)
+                {
+                    connection.Open();
+                    string query = $@"update dbo.contact set {column}='{newValue}' where FirstName='{firstName}' and LastName='{lastName}'";
+                    SqlCommand command = new SqlCommand(query, connection);
+                    var result = command.ExecuteNonQuery();
+                    connection.Close();
+                    if (result > 0)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            finally
+            {
+                if (connection.State.Equals("Open"))
+                    connection.Close();
+            }
+        }
     }
 }
 
