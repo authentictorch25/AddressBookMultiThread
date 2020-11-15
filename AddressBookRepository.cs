@@ -141,6 +141,55 @@ namespace AddressBookThread
                     connection.Close();
             }
         }
+        public void GetNumberOfContactsByCityOrState()
+        {
+            Console.WriteLine("Enter:\n1.For city\n2.For state");
+            int option = Convert.ToInt32(Console.ReadLine());
+            string query = "";
+            switch (option)
+            {
+                case 1:
+                    query = $@"select City,count(City) as PeopleInCity from address_book group by City";
+                    break;
+                case 2:
+                    query = $@"select State,count(State) as PeopleInCity from address_book group by State";
+                    break;
+            }
+            DBConnection dbc = new DBConnection();
+            connection = dbc.GetConnection();
+            try
+            {
+                using (connection)
+                {
+                    SqlCommand command = new SqlCommand(query, connection);
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            string location = reader[0].ToString();
+                            int count = reader.GetInt32(1);
+                            Console.WriteLine($"City/State:{location}\nPeopleCount:{count}\n");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No Data found");
+                    }
+                    reader.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            finally
+            {
+                if (connection.State.Equals("Open"))
+                    connection.Close();
+            }
+        }
     }
 }
 
